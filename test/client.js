@@ -1,6 +1,6 @@
 /* jshint node: true, esversion: 6*/
 const WebSocket = require('ws');
-const ws = new WebSocket('ws://localhost:5000');
+const ws = new WebSocket('ws://localhost:3000');
 
 ws.on('open', () => {
   console.log('Connected to stream');

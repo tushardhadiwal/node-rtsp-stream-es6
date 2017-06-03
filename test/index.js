@@ -2,7 +2,7 @@
 const app = require('express')();
 const http = require('http').Server(app);
 const ioc = require('socket.io-client');
-const port = 5000;
+const port = 3000;
 const socket = ioc('http://localhost:' + port);
 
 app.get('/', (req, res) => {
