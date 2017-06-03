@@ -4,7 +4,7 @@
   "description": "RTSP stream through WebSocket",
   "main": "index.js",
   "author": "shbatm",
-  "original": "Wifsimster"
+  "original": "Wifsimster",
   "licenses": [
     {
       "type": "MIT",
