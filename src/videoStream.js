@@ -10,6 +10,7 @@ class VideoStream extends EventEmitter {
         super(options);
         this.name = options.name;
         this.url = options.url;
+        this.protocol = ("protocol" in options) ? options.protocol : "tcp";
         this.frameRate = ("frameRate" in options) ? options.frameRate : "30";
         this.shutdownDelay = ("shutdownDelay" in options) ? options.shutdownDelay : 5000;
         this.hideFfmpegOutput = ("hideFfmpegOutput" in options) ? options.hideFfmpegOutput : false;
