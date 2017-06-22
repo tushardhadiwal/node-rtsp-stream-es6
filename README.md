@@ -38,6 +38,7 @@ const options = {
     frameRate: "30", // Optional - use to set the frame rate of the stream
     shutdownDelay: 10000,  // Optional - delay before FFMPEG stopping after last client disconnects
     hideFfmpegOutput: false // Optional - show/hide FFMPEG console output
+                            // As of v1.1.2 - default is true.
 };
 
 stream = new Stream(options);

@@ -13,7 +13,7 @@ class VideoStream extends EventEmitter {
         this.protocol = ("protocol" in options) ? options.protocol : "tcp";
         this.frameRate = ("frameRate" in options) ? options.frameRate : "30";
         this.shutdownDelay = ("shutdownDelay" in options) ? options.shutdownDelay : 5000;
-        this.hideFfmpegOutput = ("hideFfmpegOutput" in options) ? options.hideFfmpegOutput : false;
+        this.hideFfmpegOutput = ("hideFfmpegOutput" in options) ? options.hideFfmpegOutput : true;
         this.width = options.width;
         this.height = options.height;
         this.port = options.port;
@@ -66,7 +66,7 @@ class VideoStream extends EventEmitter {
     }
 
     startStream() {    
-        this.mpeg1Muxer = new Mpeg1Muxer({ url: this.url, frameRate: this.frameRate })    ;
+        this.mpeg1Muxer = new Mpeg1Muxer({ url: this.url, frameRate: this.frameRate, protocol: this.protocol })    ;
         this.mpeg1Muxer.on('mpeg1data', (data) => { return this.emit('camdata', data); });
 
         let gettingInputData = false;
