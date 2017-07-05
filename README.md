@@ -39,6 +39,8 @@ const options = {
     shutdownDelay: 10000,  // Optional - delay before FFMPEG stopping after last client disconnects
     hideFfmpegOutput: false // Optional - show/hide FFMPEG console output
                             // As of v1.1.2 - default is true.
+    enableAudio: false // Default is false. Set to true to enable audio in FFMPEG
+    ffmpegCustomArgs: [] // Array of custom FFMPEG CLI arguments. WARNING: this will overrite all ffmpeg options and EVERYTHING must be passed as an array of strings (including stream url, protocol, and framerate). Only use if you know what you are doing!
 };
 
 stream = new Stream(options);

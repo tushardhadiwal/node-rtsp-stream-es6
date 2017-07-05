@@ -14,6 +14,10 @@ class VideoStream extends EventEmitter {
         this.frameRate = ("frameRate" in options) ? options.frameRate : "30";
         this.shutdownDelay = ("shutdownDelay" in options) ? options.shutdownDelay : 5000;
         this.hideFfmpegOutput = ("hideFfmpegOutput" in options) ? options.hideFfmpegOutput : true;
+        if ("ffmpegCustomArgs" in options) {
+            this.ffmpegCustomArgs = options.ffmpegCustomArgs;
+        }
+        if ("enableAudio" in options) { this.enableAudio = options.enableAudio; }
         this.width = options.width;
         this.height = options.height;
         this.port = options.port;
@@ -50,13 +54,13 @@ class VideoStream extends EventEmitter {
 
             this.on('camdata', (data) => {
                 server.clients.forEach((client) => {
-                  if(client.readyState === WebSocket.OPEN) { client.send(data); }
+                    if (client.readyState === WebSocket.OPEN) { client.send(data); }
                 });
             });
 
-            socket.on('close', () => { 
+            socket.on('close', () => {
                 this.connectionCount--;
-                console.log(`${this.name} client disconnected! ${this.connectionCount} active connections.`); 
+                console.log(`${this.name} client disconnected! ${this.connectionCount} active connections.`);
                 if (this.connectionCount === 0) {
                     this.stopStream(this.shutdownDelay);
                 }
@@ -65,9 +69,13 @@ class VideoStream extends EventEmitter {
         return this;
     }
 
-    startStream() {    
-        this.mpeg1Muxer = new Mpeg1Muxer({ url: this.url, frameRate: this.frameRate, protocol: this.protocol })    ;
-        this.mpeg1Muxer.on('mpeg1data', (data) => { return this.emit('camdata', data); });
+    startStream() {
+        var muxerOpts = { url: this.url, frameRate: this.frameRate, protocol: this.protocol };
+        if ("ffmpegCustomArgs" in this) { muxerOpts.ffmpegCustomArgs = this.ffmpegCustomArgs; }
+        if ("enableAudio" in this) { muxerOpts.enableAudio = this.enableAudio; }
+        this.mpeg1Muxer = new Mpeg1Muxer(muxerOpts);
+        this.mpeg1Muxer.on('mpeg1data', (data) => {
+            return this.emit('camdata', data); });
 
         let gettingInputData = false;
         let gettingOutputData = false;
@@ -92,15 +100,16 @@ class VideoStream extends EventEmitter {
                 }
             }
         });
-        
-        if (!this.hideFfmpegOutput) { this.mpeg1Muxer.on('ffmpegError', (data) => { return global.process.stderr.write(data); }); }
+
+        if (!this.hideFfmpegOutput) { this.mpeg1Muxer.on('ffmpegError', (data) => {
+                return global.process.stderr.write(data); }); }
         return this;
     }
 
     stopStream(timeout) {
         console.log(`Last connection closed! Stopping stream in ${timeout/1000} seconds...`);
-        this.disconnectTimeout = setTimeout(() => { 
-            this.mpeg1Muxer.stream.kill('SIGINT'); 
+        this.disconnectTimeout = setTimeout(() => {
+            this.mpeg1Muxer.stream.kill('SIGINT');
             this.disconnectTimeout = null;
             this.streamActive = false;
             console.log("Stream closed. Server still running waiting for new connections...");

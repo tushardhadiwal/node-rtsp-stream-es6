@@ -1,3 +1,8 @@
+### [1.1.3] Disable Audio and Add Custom FFMPEG Options
+
+* Audio is disabled by default. Pass `enableAudio: true` to enable.
+* To pass a custom array of FFMPEG arguements, pass `ffmpegCustomArgs` in the options.
+
 ### [1.1.2] Bug fixes
 
 * Bug fixes from v1.1.1
