@@ -1,3 +1,7 @@
+### [1.1.4] Change port parameter to ffmpegPort
+
+* Change name of port parameter for clarification purposes.
+
 ### [1.1.3] Disable Audio and Add Custom FFMPEG Options
 
 * Audio is disabled by default. Pass `enableAudio: true` to enable.

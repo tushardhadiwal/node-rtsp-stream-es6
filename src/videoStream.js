@@ -20,7 +20,7 @@ class VideoStream extends EventEmitter {
         if ("enableAudio" in options) { this.enableAudio = options.enableAudio; }
         this.width = options.width;
         this.height = options.height;
-        this.port = options.port;
+        this.port = options.ffmpegPort;
         this.stream = void 0;
         this.connectionCount = 0;
         this.streamActive = false;
