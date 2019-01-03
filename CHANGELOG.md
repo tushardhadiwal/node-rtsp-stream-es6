@@ -1,3 +1,9 @@
+### [1.1.7] Incorporate upstream changes, refactor, add harware acceleration
+
+* Changed function names and initialization to match upstream fork
+* Passed `options` object directly to mpeg1muxer instead of reassigning it several times
+* Added `hwAccel` option to attempt to use hardware accelerated version of FFMPEG.
+
 ### [1.1.4] Change port parameter to ffmpegPort
 
 * Change name of port parameter for clarification purposes.

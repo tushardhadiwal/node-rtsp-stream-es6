@@ -8,16 +8,19 @@ class Mpeg1Muxer extends EventEmitter {
     constructor(options) {
         super(options);
 
-        this.url = options.url;
-        this.frameRate = options.frameRate;
-        this.protocol = options.protocol;
+        var ffmpegArgs = ["-rtsp_transport", options.protocol, "-r", options.frameRate, "-i", options.url, "-f", "mpegts", "-codec:v", "mpeg1video", "-bf", "0", "-"];
 
-        var ffmpegArgs = ["-rtsp_transport", this.protocol, "-r", this.frameRate, "-i", this.url, "-f", "mpegts", "-codec:v", "mpeg1video", "-bf", "0", "-"];
-
-        if ("ffmpegCustomArgs" in options) {
-            ffmpegArgs = options.ffmpegCustomArgs;
-        } else if (!("enableAudio" in options)) {
+        if (options.enableAudio) {
+            ffmpegArgs.splice(-3, 0, '-codec:a', 'mp2');
+        } else {
             ffmpegArgs.splice(-3, 0, "-an");
+        }
+        if (options.hwAccel) {
+            ffmpegArgs.splice(2,0, "-codec:v", "h264_mmal");
+            ffmpegArgs.splice(-4, 1, "h264_omx");
+        }
+        if (options.ffmpegCustomArgs) {
+            ffmpegArgs = options.ffmpegCustomArgs;
         }
 
         this.stream = child_process.spawn("ffmpeg", ffmpegArgs, {
@@ -30,6 +33,13 @@ class Mpeg1Muxer extends EventEmitter {
         this.stream.stderr.on('data', (data) => {
             return this.emit('ffmpegError', data); });
     }
+
+  stop() {
+    this.stream.stdout.removeAllListeners();
+    this.stream.stderr.removeAllListeners();
+    this.stream.kill();
+    this.stream = undefined;
+  }
 }
 
 module.exports = Mpeg1Muxer;

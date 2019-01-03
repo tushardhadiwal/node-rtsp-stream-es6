@@ -10,5 +10,8 @@ const options = {
     hideFfmpegOutput: false // Optional - show/hide FFMPEG console output
 };
 
-stream = new Stream(options);
-stream.startListener();
+stream = new Stream(options)
+
+stream.start()
+
+setTimeout(stream.stop.bind(stream), 10 * 1000)

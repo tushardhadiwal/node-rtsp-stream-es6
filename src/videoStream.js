@@ -8,33 +8,32 @@ class VideoStream extends EventEmitter {
 
     constructor(options) {
         super(options);
-        this.name = options.name;
-        this.url = options.url;
-        this.protocol = ("protocol" in options) ? options.protocol : "tcp";
-        this.frameRate = ("frameRate" in options) ? options.frameRate : "30";
-        this.shutdownDelay = ("shutdownDelay" in options) ? options.shutdownDelay : 5000;
-        this.hideFfmpegOutput = ("hideFfmpegOutput" in options) ? options.hideFfmpegOutput : true;
-        if ("ffmpegCustomArgs" in options) {
-            this.ffmpegCustomArgs = options.ffmpegCustomArgs;
-        }
-        if ("enableAudio" in options) { this.enableAudio = options.enableAudio; }
-        this.width = options.width;
-        this.height = options.height;
-        this.port = options.ffmpegPort;
+
+        // Set defaults if not provided
+        options.protocol = options.protocol || "tcp";
+        options.frameRate = options.frameRate || "30";
+        options.shutdownDelay = options.shutdownDelay || 5000;
+        options.hideFfmpegOutput =  options.hideFfmpegOutput || true;
+        options.hwAccel = options.hwAccel || false;
+
+        // Finish setup
         this.stream = void 0;
         this.connectionCount = 0;
         this.streamActive = false;
         this.disconnectTimeout = null;
+        this.options = options;
+        this.stream2Socket();
     }
 
-    startListener() {
-        console.log(`Starting WebSocket server on port ${this.port}. Waiting for connections...`);
-        const server = new WebSocket.Server({ port: this.port });
-        server.on('connection', (socket) => {
+    stream2Socket() {
+        console.log(`Starting WebSocket server on port ${this.options.ffmpegPort}. Waiting for connections...`);
+        this.server = new WebSocket.Server({ port: this.options.ffmpegPort });
+        this.server.on('connection', (socket) => {
+
             if (this.connectionCount === 0) {
                 if (!this.disconnectTimeout) {
                     // First connection, start the stream.
-                    this.startStream();
+                    this.start();
                     this.streamActive = true;
                 } else {
                     // New connection while still in shutdown timeout.
@@ -44,38 +43,35 @@ class VideoStream extends EventEmitter {
                 }
             }
             this.connectionCount++;
-            console.log(`${this.name}: new connection! ${this.connectionCount} active connections.`);
+            console.log(`${this.options.name}: new connection! ${this.connectionCount} active connections.`);
 
             let streamHeader = new Buffer(8);
             streamHeader.write(STREAM_MAGIC_BYTES);
-            streamHeader.writeUInt16BE(this.width, 4);
-            streamHeader.writeUInt16BE(this.height, 6);
+            streamHeader.writeUInt16BE(this.options.width, 4);
+            streamHeader.writeUInt16BE(this.options.height, 6);
             socket.send(streamHeader);
-
-            this.on('camdata', (data) => {
-                server.clients.forEach((client) => {
-                    if (client.readyState === WebSocket.OPEN) { client.send(data); }
-                });
-            });
 
             socket.on('close', () => {
                 this.connectionCount--;
-                console.log(`${this.name} client disconnected! ${this.connectionCount} active connections.`);
+                console.log(`${this.options.name} client disconnected! ${this.connectionCount} active connections.`);
                 if (this.connectionCount === 0) {
                     this.stopStream(this.shutdownDelay);
                 }
             });
         });
-        return this;
+
+        this.on('camdata', (data) => {
+            server.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) { client.send(data); }
+            });
+        });
     }
 
-    startStream() {
-        var muxerOpts = { url: this.url, frameRate: this.frameRate, protocol: this.protocol };
-        if ("ffmpegCustomArgs" in this) { muxerOpts.ffmpegCustomArgs = this.ffmpegCustomArgs; }
-        if ("enableAudio" in this) { muxerOpts.enableAudio = this.enableAudio; }
-        this.mpeg1Muxer = new Mpeg1Muxer(muxerOpts);
+    start() {
+        this.mpeg1Muxer = new Mpeg1Muxer(this.options);
         this.mpeg1Muxer.on('mpeg1data', (data) => {
-            return this.emit('camdata', data); });
+            return this.emit('camdata', data);
+        });
 
         let gettingInputData = false;
         let gettingOutputData = false;
@@ -95,21 +91,33 @@ class VideoStream extends EventEmitter {
                 let size = data.match(/\d+x\d+/);
                 if (size !== null) {
                     size = size[0].split('x');
-                    if (this.width === null) { this.width = parseInt(size[0], 10); }
-                    if (this.height === null) { this.height = parseInt(size[1], 10); }
+                    if (this.options.width === null) { this.options.width = parseInt(size[0], 10); }
+                    if (this.options.height === null) { this.options.height = parseInt(size[1], 10); }
                 }
             }
         });
-
-        if (!this.hideFfmpegOutput) { this.mpeg1Muxer.on('ffmpegError', (data) => {
-                return global.process.stderr.write(data); }); }
+        if (!this.options.hideFfmpegOutput) {
+            this.mpeg1Muxer.on('ffmpegError', (data) => {
+                return global.process.stderr.write(data);
+            });
+        }
         return this;
+    }
+
+    stop(serverCloseCallback) {
+        this.server.close(serverCloseCallback);
+        this.server.removeAllListeners();
+        this.server = undefined;
+
+        this.mpeg1Muxer.stop();
+        this.mpeg1Muxer.removeAllListeners();
+        this.mpeg1Muxer = undefined;
     }
 
     stopStream(timeout) {
         console.log(`Last connection closed! Stopping stream in ${timeout/1000} seconds...`);
         this.disconnectTimeout = setTimeout(() => {
-            this.mpeg1Muxer.stream.kill('SIGINT');
+            this.stop();
             this.disconnectTimeout = null;
             this.streamActive = false;
             console.log("Stream closed. Server still running waiting for new connections...");

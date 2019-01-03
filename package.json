@@ -1,7 +1,6 @@
 {
   "name": "node-rtsp-stream-es6",
-  "version": "1.1.4",
-  "dist-tags": { "latest": "1.1.4" },
+  "version": "1.1.7",
   "description": "RTSP stream through WebSocket",
   "main": "index.js",
   "author": "shbatm",

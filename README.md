@@ -37,34 +37,17 @@ const options = {
     protocol: "tcp", // Optional "tcp" or "udp", default: "tcp"
     frameRate: "30", // Optional - use to set the frame rate of the stream
     shutdownDelay: 10000,  // Optional - delay before FFMPEG stopping after last client disconnects
-    hideFfmpegOutput: false // Optional - show/hide FFMPEG console output
+    hideFfmpegOutput: false, // Optional - show/hide FFMPEG console output
                             // As of v1.1.2 - default is true.
-    enableAudio: false // Default is false. Set to true to enable audio in FFMPEG
+    enableAudio: false, // Default is false. Set to true to enable audio in FFMPEG
+    hwAccel: false, // Attempt to use hardware accelerated codecs
     ffmpegCustomArgs: [] // Array of custom FFMPEG CLI arguments. WARNING: this will overrite all ffmpeg options and EVERYTHING must be passed as an array of strings (including stream url, protocol, and framerate). Only use if you know what you are doing!
 };
 
 stream = new Stream(options);
-stream.startListener();
+stream.start();
 ```
 
 ## Client
 
-```javascript
-const WebSocket = require('ws')
-const ws = new WebSocket('ws://localhost:3000')
-
-ws.on('open', () => {
-  console.log('Connected to stream')
-})
-
-ws.on('message', (data, flags) => {
-  console.log(data)
-})
-```
-
-## Example
-
-- Copy the `test/view-stream.html` to a web server's root on your device (e.g. `/var/www/html/`). 
-- Navigate to `test/` and run `node server.js`
-
-You can find a live stream JSMPEG example here : https://github.com/phoboslab/jsmpeg/blob/master/stream-example.html
+You can find a live stream JSMPEG example here : https://github.com/phoboslab/jsmpeg/blob/master/view-stream.html
