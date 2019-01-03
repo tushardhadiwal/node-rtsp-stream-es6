@@ -16,11 +16,15 @@ class Mpeg1Muxer extends EventEmitter {
             ffmpegArgs.splice(-3, 0, "-an");
         }
         if (options.hwAccel) {
-            ffmpegArgs.splice(2,0, "-codec:v", "h264_mmal");
-            ffmpegArgs.splice(-4, 1, "h264_omx");
+            ffmpegArgs.splice(2, 0, "-codec:v", "h264_mmal");
+            // ffmpegArgs.splice(ffmpegArgs.indexOf("mpeg1video"), 1, "h264_omx");
         }
         if (options.ffmpegCustomArgs) {
             ffmpegArgs = options.ffmpegCustomArgs;
+        }
+
+        if (!options.hideFfmpegOutput) {
+            console.log("Launching ffmpeg " + ffmpegArgs.join(' '));
         }
 
         this.stream = child_process.spawn("ffmpeg", ffmpegArgs, {
@@ -29,17 +33,19 @@ class Mpeg1Muxer extends EventEmitter {
 
         this.inputStreamStarted = true;
         this.stream.stdout.on('data', (data) => {
-            return this.emit('mpeg1data', data); });
+            return this.emit('mpeg1data', data);
+        });
         this.stream.stderr.on('data', (data) => {
-            return this.emit('ffmpegError', data); });
+            return this.emit('ffmpegError', data);
+        });
     }
 
-  stop() {
-    this.stream.stdout.removeAllListeners();
-    this.stream.stderr.removeAllListeners();
-    this.stream.kill();
-    this.stream = undefined;
-  }
+    stop() {
+        this.stream.stdout.removeAllListeners();
+        this.stream.stderr.removeAllListeners();
+        this.stream.kill();
+        this.stream = undefined;
+    }
 }
 
 module.exports = Mpeg1Muxer;

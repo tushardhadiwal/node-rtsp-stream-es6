@@ -13,8 +13,10 @@ class VideoStream extends EventEmitter {
         options.protocol = options.protocol || "tcp";
         options.frameRate = options.frameRate || "30";
         options.shutdownDelay = options.shutdownDelay || 5000;
-        options.hideFfmpegOutput =  options.hideFfmpegOutput || true;
-        options.hwAccel = options.hwAccel || false;
+        options.hideFfmpegOutput = ("hideFfmpegOutput" in options) ? options.hideFfmpegOutput : true;
+        options.hwAccel = ("hwAccel" in options) ? options.hwAccel : false;
+
+        console.log(JSON.stringify(options, undefined, 3));
 
         // Finish setup
         this.stream = void 0;
@@ -29,7 +31,6 @@ class VideoStream extends EventEmitter {
         console.log(`Starting WebSocket server on port ${this.options.ffmpegPort}. Waiting for connections...`);
         this.server = new WebSocket.Server({ port: this.options.ffmpegPort });
         this.server.on('connection', (socket) => {
-
             if (this.connectionCount === 0) {
                 if (!this.disconnectTimeout) {
                     // First connection, start the stream.
@@ -61,7 +62,7 @@ class VideoStream extends EventEmitter {
         });
 
         this.on('camdata', (data) => {
-            server.clients.forEach((client) => {
+            this.server.clients.forEach((client) => {
                 if (client.readyState === WebSocket.OPEN) { client.send(data); }
             });
         });
