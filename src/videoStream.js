@@ -16,7 +16,7 @@ class VideoStream extends EventEmitter {
         options.hideFfmpegOutput = ("hideFfmpegOutput" in options) ? options.hideFfmpegOutput : true;
         options.hwAccel = ("hwAccel" in options) ? options.hwAccel : false;
 
-        console.log(JSON.stringify(options, undefined, 3));
+        if (!options.hideFfmpegOutput) { console.log(JSON.stringify(options, undefined, 3)); }
 
         // Finish setup
         this.stream = void 0;
