@@ -4,6 +4,11 @@ const WebSocket = require('ws');
 const EventEmitter = require('events');
 const STREAM_MAGIC_BYTES = "jsmp";
 const Mpeg1Muxer = require('./mpeg1muxer');
+const https = require('https');
+const fs = require('fs');
+var path = require("path");
+var nserver =null;
+
 class VideoStream extends EventEmitter {
 
     constructor(options) {
@@ -28,8 +33,20 @@ class VideoStream extends EventEmitter {
     }
 
     stream2Socket() {
+
+        if(!!nserver)
+        {
+                nserver.close();
+        }
+
+        nserver = https.createServer({
+        cert: fs.readFileSync(path.join(__dirname, "/cert.pem")),
+        key: fs.readFileSync(path.join(__dirname, "/key.pem"))});
+
         console.log(`Starting WebSocket server on port ${this.options.ffmpegPort}. Waiting for connections...`);
-        this.server = new WebSocket.Server({ port: this.options.ffmpegPort });
+        this.server = new WebSocket.Server({noServer:true});
+        const hjk= this.server;
+
         this.server.on('connection', (socket) => {
             if (this.connectionCount === 0) {
                 if (!this.disconnectTimeout) {
@@ -56,16 +73,26 @@ class VideoStream extends EventEmitter {
                 this.connectionCount--;
                 console.log(`${this.options.name} client disconnected! ${this.connectionCount} active connections.`);
                 if (this.connectionCount === 0) {
-                    this.stopStream(this.shutdownDelay);
-                }
+                    this.stopStream(this.shutdownDelay);                  
+                }               
             });
         });
 
+        nserver.on('upgrade', function upgrade(request, socket, head) {
+
+                hjk.handleUpgrade(request, socket, head, function done(ws) {
+                hjk.emit('connection', ws, request);
+              });
+
+          });
         this.on('camdata', (data) => {
             this.server.clients.forEach((client) => {
                 if (client.readyState === WebSocket.OPEN) { client.send(data); }
             });
         });
+
+        console.log("listening is:"+nserver.listening);
+        nserver.listen(this.options.ffmpegPort);            
     }
 
     start() {
